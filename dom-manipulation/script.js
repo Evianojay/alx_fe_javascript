@@ -11,6 +11,17 @@ function saveQuotes() {
   localStorage.setItem('quotes', JSON.stringify(quotes));
 }
 
+// Show notification in UI
+function showNotification(message, type = 'success') {
+  const note = document.getElementById('notification');
+  note.textContent = message;
+  note.className = `notification ${type}`;
+  note.style.opacity = '1';
+  setTimeout(() => {
+    note.style.opacity = '0';
+  }, 4000);
+}
+
 // Populate dropdown with unique categories
 function populateCategories() {
   const categoryFilter = document.getElementById('categoryFilter');
@@ -92,7 +103,7 @@ function importFromJsonFile(event) {
     saveQuotes();
     populateCategories();
     filterQuotes();
-    alert('Quotes imported successfully!');
+    showNotification('Quotes imported successfully!', 'success');
   };
   reader.readAsText(event.target.files[0]);
 }
@@ -108,6 +119,7 @@ async function fetchQuotesFromServer() {
     }));
   } catch (error) {
     console.error('Failed to fetch from server:', error);
+    showNotification('Error fetching from server!', 'error');
     return [];
   }
 }
@@ -128,6 +140,7 @@ async function postQuoteToServer(quote) {
     console.log('Quote posted to mock API:', result);
   } catch (error) {
     console.error('Failed to post quote:', error);
+    showNotification('Failed to post quote to server.', 'error');
   }
 }
 
@@ -147,7 +160,9 @@ function mergeServerQuotes(serverQuotes) {
     saveQuotes();
     populateCategories();
     filterQuotes();
-    alert(`Synced with server. ${newCount} new quote(s) added.`);
+    showNotification(`Quotes synced with server! ${newCount} new quote(s) added.`, 'success');
+  } else {
+    showNotification('Quotes synced with server! No new quotes found.', 'success');
   }
 }
 

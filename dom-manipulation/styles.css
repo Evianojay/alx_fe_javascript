@@ -142,3 +142,21 @@ label[for="categoryFilter"] {
   border-color: #00796b;
   box-shadow: 0 0 5px rgba(0, 121, 107, 0.4);
 }
+#notification {
+  transition: opacity 0.5s ease-in-out;
+  font-weight: bold;
+}
+#notification.success {
+  color: #2e7d32;
+}
+#notification.error {
+  color: #d32f2f;
+}
+#notification {
+  margin-top: 20px;
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #e0f7fa;
+  color: #00796b;
+  opacity: 0;
+}
