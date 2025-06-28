@@ -23,6 +23,14 @@
     <input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)" />
     <button id="exportBtn">Export Quotes to JSON</button>
   </div>
+  <!-- Category Filter -->
+<div>
+  <label for="categoryFilter">Filter by Category:</label>
+  <select id="categoryFilter" onchange="filterQuotes()">
+    <option value="all">All Categories</option>
+  </select>
+</div>
+
 
 
   <script src="script.js"></script>
