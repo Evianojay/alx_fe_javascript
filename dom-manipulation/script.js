@@ -66,28 +66,13 @@ function addQuote() {
   filterQuotes();
 
   // Post to server (mock)
-  postQuoteToServer({ quote: text, author: category });
+  postQuoteToServer(newQuote);
 
   document.getElementById('newQuoteText').value = '';
   document.getElementById('newQuoteCategory').value = '';
 }
 
-// Post to mock API server
-async function postQuoteToServer(quote) {
-  try {
-    const res = await fetch('https://dummyjson.com/quotes/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(quote)
-    });
-    const result = await res.json();
-    console.log('Quote posted:', result);
-  } catch (error) {
-    console.error('Failed to post quote:', error);
-  }
-}
-
-// Export quotes as JSON
+// JSON Export
 document.getElementById('exportBtn').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(quotes, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -98,7 +83,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
-// Import from uploaded JSON
+// JSON Import
 function importFromJsonFile(event) {
   const reader = new FileReader();
   reader.onload = function (e) {
@@ -112,39 +97,61 @@ function importFromJsonFile(event) {
   reader.readAsText(event.target.files[0]);
 }
 
-// Fetch quotes from mock API
+// ✅ Mock API GET - Fetch quotes from required endpoint
 async function fetchQuotesFromServer() {
   try {
-    const response = await fetch('https://dummyjson.com/quotes');
+    const response = await fetch('https://jsonplaceholder.typicode.com/posts');
     const data = await response.json();
-    return data.quotes || [];
+    return data.map(post => ({
+      text: post.title,
+      category: post.body
+    }));
   } catch (error) {
     console.error('Failed to fetch from server:', error);
     return [];
   }
 }
 
-// Merge server quotes into local quotes
-function mergeServerQuotes(serverQuotes) {
-  const localMap = new Map(quotes.map(q => [q.text, q]));
-
-  let newQuotesAdded = 0;
-  serverQuotes.forEach(serverQuote => {
-    if (!localMap.has(serverQuote.quote)) {
-      quotes.push({ text: serverQuote.quote, category: serverQuote.author });
-      newQuotesAdded++;
-    }
-  });
-
-  if (newQuotesAdded > 0) {
-    saveQuotes();
-    populateCategories();
-    filterQuotes();
-    alert(`${newQuotesAdded} new quotes synced from server.`);
+// ✅ Mock API POST - Push new quote to mock API
+async function postQuoteToServer(quote) {
+  try {
+    const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: quote.text,
+        body: quote.category,
+        userId: 1
+      })
+    });
+    const result = await response.json();
+    console.log('Quote posted to mock API:', result);
+  } catch (error) {
+    console.error('Failed to post quote:', error);
   }
 }
 
-// Sync quotes from server and update local storage
+// ✅ Merge quotes and update UI
+function mergeServerQuotes(serverQuotes) {
+  const localMap = new Map(quotes.map(q => [q.text, q]));
+  let newCount = 0;
+
+  serverQuotes.forEach(serverQuote => {
+    if (!localMap.has(serverQuote.text)) {
+      quotes.push(serverQuote);
+      newCount++;
+    }
+  });
+
+  if (newCount > 0) {
+    saveQuotes();
+    populateCategories();
+    filterQuotes();
+    alert(`Synced with server. ${newCount} new quote(s) added.`);
+  }
+}
+
+// ✅ Main sync function
 async function syncQuotes() {
   const serverQuotes = await fetchQuotesFromServer();
   mergeServerQuotes(serverQuotes);
@@ -159,9 +166,7 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('newQuote').addEventListener('click', filterQuotes);
   document.getElementById('addQuoteBtn').addEventListener('click', addQuote);
 
-  // Initial sync
+  // Initial and periodic sync
   syncQuotes();
-
-  // Periodic sync every 60 seconds
   setInterval(syncQuotes, 60000);
 });
