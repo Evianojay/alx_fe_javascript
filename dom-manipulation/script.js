@@ -16,10 +16,8 @@ function populateCategories() {
   const categoryFilter = document.getElementById('categoryFilter');
   const selected = localStorage.getItem('selectedCategory') || 'all';
 
-  // Extract unique categories
   const categories = [...new Set(quotes.map(q => q.category))];
 
-  // Build dropdown options
   categoryFilter.innerHTML = `<option value="all">All Categories</option>`;
   categories.forEach(cat => {
     const option = document.createElement('option');
@@ -28,7 +26,6 @@ function populateCategories() {
     categoryFilter.appendChild(option);
   });
 
-  // Restore previously selected value
   categoryFilter.value = selected;
 }
 
@@ -52,7 +49,6 @@ function filterQuotes() {
   const random = filtered[Math.floor(Math.random() * filtered.length)];
   display.innerHTML = `<blockquote>${random.text}</blockquote><p>— ${random.category}</p>`;
 
-  // Optional: Save last shown quote in sessionStorage
   sessionStorage.setItem('lastViewedQuote', JSON.stringify(random));
 }
 
@@ -66,9 +62,8 @@ function addQuote() {
   quotes.push({ text, category });
   saveQuotes();
   populateCategories();
-  filterQuotes(); // auto-refresh with updated category
+  filterQuotes();
 
-  // Clear inputs
   document.getElementById('newQuoteText').value = '';
   document.getElementById('newQuoteCategory').value = '';
 }
@@ -98,7 +93,38 @@ function importFromJsonFile(event) {
   reader.readAsText(event.target.files[0]);
 }
 
-// Initialize on load
+// — NEW: Server Sync with Conflict Resolution —
+
+// Merge server quotes into local quotes
+function mergeServerQuotes(serverQuotes) {
+  const localMap = new Map(quotes.map(q => [q.text, q])); // use quote text as key
+
+  serverQuotes.forEach(serverQuote => {
+    if (!localMap.has(serverQuote.quote)) {
+      quotes.push({ text: serverQuote.quote, category: serverQuote.author });
+    }
+  });
+
+  saveQuotes();
+  populateCategories();
+  filterQuotes();
+  alert('Synced with server. New quotes were added.');
+}
+
+// Fetch from dummy server (mock API)
+async function syncWithServer() {
+  try {
+    const response = await fetch('https://dummyjson.com/quotes');
+    const data = await response.json();
+    if (data && data.quotes) {
+      mergeServerQuotes(data.quotes);
+    }
+  } catch (error) {
+    console.error('Failed to sync with server:', error);
+  }
+}
+
+// — Initialize on page load —
 window.addEventListener('DOMContentLoaded', () => {
   loadQuotes();
   populateCategories();
@@ -106,4 +132,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('newQuote').addEventListener('click', filterQuotes);
   document.getElementById('addQuoteBtn').addEventListener('click', addQuote);
+
+  // Trigger sync on load
+  syncWithServer();
+
+  // Periodic sync every 60 seconds
+  setInterval(syncWithServer, 60000);
 });
