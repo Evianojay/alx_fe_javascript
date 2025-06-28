@@ -59,16 +59,35 @@ function addQuote() {
 
   if (!text || !category) return alert("Please enter both quote and category.");
 
-  quotes.push({ text, category });
+  const newQuote = { text, category };
+  quotes.push(newQuote);
   saveQuotes();
   populateCategories();
   filterQuotes();
+
+  // Post to server (mock)
+  postQuoteToServer({ quote: text, author: category });
 
   document.getElementById('newQuoteText').value = '';
   document.getElementById('newQuoteCategory').value = '';
 }
 
-// JSON Export
+// Post to mock API server
+async function postQuoteToServer(quote) {
+  try {
+    const res = await fetch('https://dummyjson.com/quotes/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(quote)
+    });
+    const result = await res.json();
+    console.log('Quote posted:', result);
+  } catch (error) {
+    console.error('Failed to post quote:', error);
+  }
+}
+
+// Export quotes as JSON
 document.getElementById('exportBtn').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(quotes, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -79,7 +98,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
-// JSON Import
+// Import from uploaded JSON
 function importFromJsonFile(event) {
   const reader = new FileReader();
   reader.onload = function (e) {
@@ -93,38 +112,45 @@ function importFromJsonFile(event) {
   reader.readAsText(event.target.files[0]);
 }
 
-// — NEW: Server Sync with Conflict Resolution —
-
-// Merge server quotes into local quotes
-function mergeServerQuotes(serverQuotes) {
-  const localMap = new Map(quotes.map(q => [q.text, q])); // use quote text as key
-
-  serverQuotes.forEach(serverQuote => {
-    if (!localMap.has(serverQuote.quote)) {
-      quotes.push({ text: serverQuote.quote, category: serverQuote.author });
-    }
-  });
-
-  saveQuotes();
-  populateCategories();
-  filterQuotes();
-  alert('Synced with server. New quotes were added.');
-}
-
-// Fetch from dummy server (mock API)
-async function syncWithServer() {
+// Fetch quotes from mock API
+async function fetchQuotesFromServer() {
   try {
     const response = await fetch('https://dummyjson.com/quotes');
     const data = await response.json();
-    if (data && data.quotes) {
-      mergeServerQuotes(data.quotes);
-    }
+    return data.quotes || [];
   } catch (error) {
-    console.error('Failed to sync with server:', error);
+    console.error('Failed to fetch from server:', error);
+    return [];
   }
 }
 
-// — Initialize on page load —
+// Merge server quotes into local quotes
+function mergeServerQuotes(serverQuotes) {
+  const localMap = new Map(quotes.map(q => [q.text, q]));
+
+  let newQuotesAdded = 0;
+  serverQuotes.forEach(serverQuote => {
+    if (!localMap.has(serverQuote.quote)) {
+      quotes.push({ text: serverQuote.quote, category: serverQuote.author });
+      newQuotesAdded++;
+    }
+  });
+
+  if (newQuotesAdded > 0) {
+    saveQuotes();
+    populateCategories();
+    filterQuotes();
+    alert(`${newQuotesAdded} new quotes synced from server.`);
+  }
+}
+
+// Sync quotes from server and update local storage
+async function syncQuotes() {
+  const serverQuotes = await fetchQuotesFromServer();
+  mergeServerQuotes(serverQuotes);
+}
+
+// Initialize
 window.addEventListener('DOMContentLoaded', () => {
   loadQuotes();
   populateCategories();
@@ -133,9 +159,9 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('newQuote').addEventListener('click', filterQuotes);
   document.getElementById('addQuoteBtn').addEventListener('click', addQuote);
 
-  // Trigger sync on load
-  syncWithServer();
+  // Initial sync
+  syncQuotes();
 
   // Periodic sync every 60 seconds
-  setInterval(syncWithServer, 60000);
+  setInterval(syncQuotes, 60000);
 });
