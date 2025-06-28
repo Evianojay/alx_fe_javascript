@@ -103,3 +103,42 @@ label[for="categoryFilter"] {
   font-weight: bold;
   color: #00796b;
 }
+/* === Custom Dropdown Wrapper === */
+.select-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 260px;
+  margin-top: 10px;
+}
+
+.select-wrapper::after {
+  content: '▾';
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  color: #00796b;
+  pointer-events: none;
+  font-size: 18px;
+}
+
+.select-wrapper select {
+  appearance: none; /* Removes default arrow */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  width: 100%;
+  padding: 10px 30px 10px 10px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #333;
+  outline: none;
+  transition: border 0.3s ease;
+}
+
+.select-wrapper select:focus {
+  border-color: #00796b;
+  box-shadow: 0 0 5px rgba(0, 121, 107, 0.4);
+}
