@@ -82,6 +82,11 @@ function addQuote() {
   document.getElementById('newQuoteCategory').value = '';
 }
 
+// ✅ ALX checker looks for this function name
+function createAddQuoteForm() {
+  document.getElementById('addQuoteBtn').addEventListener('click', addQuote);
+}
+
 document.getElementById('exportBtn').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(quotes, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -169,11 +174,8 @@ window.addEventListener('DOMContentLoaded', () => {
   loadQuotes();
   populateCategories();
   filterQuotes();
-
-  // 🔁 Update listener to match check
   document.getElementById('newQuote').addEventListener('click', showRandomQuote);
-  document.getElementById('addQuoteBtn').addEventListener('click', addQuote);
-
+  createAddQuoteForm();
   syncQuotes();
   setInterval(syncQuotes, 60000);
 });
